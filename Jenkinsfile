@@ -49,7 +49,6 @@ pipeline {
         stage('📊 Generando Reporte') {
             steps {
                 echo "Publicando resultados en la interfaz de Jenkins..."
-                // PUNTO 1: Configuración del reporte HTML
                 publishHTML([
                     allowMissing: false,
                     alwaysLinkToLastBuild: true,
