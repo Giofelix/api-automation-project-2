@@ -2,7 +2,7 @@ pipeline {
     agent any
     
     tools {
-        // Debe coincidir con el nombre que configuraste en "Global Tool Configuration"
+        // Asegúrate que este nombre sea igual al que pusiste en Manage Jenkins > Tools
         nodejs 'node20' 
     }
     
@@ -19,7 +19,6 @@ pipeline {
     stages {
         stage('Descarga de Código') {
             steps {
-                // Jenkins descargará tu repo de GitHub automáticamente
                 checkout scm
             }
         }
@@ -27,7 +26,8 @@ pipeline {
         stage('Instalación') {
             steps {
                 echo "⚙️ Instalando dependencias del proyecto..."
-                sh 'npm ci'
+                // Usamos BAT por estar en Windows
+                bat 'npm ci'
             }
         }
         
@@ -36,29 +36,32 @@ pipeline {
                 script {
                     echo "🧪 Ejecutando Newman sobre el ambiente: ${params.ENVIRONMENT}"
                     
-                    // Nota el uso de -g para tus archivos globales
                     def command = "npx newman run ${COLLECTION} -g ${GLOBAL_ENV} -r cli"
                     
                     if (params.FULL_REPORT) {
+                        // Creamos la carpeta de reportes si no existe
+                        bat 'if not exist reports mkdir reports'
                         command += ",htmlextra,junit --reporter-htmlextra-export reports/report.html --reporter-junit-export reports/junit.xml"
                     }
                     
-                    sh command
+                    // Ejecutamos el comando con BAT
+                    bat command
                 }
             }
         }
         
         stage('Publicación de Resultados') {
             steps {
-                // Muestra el reporte HTML dentro de la interfaz de Jenkins
+                // Configuración completa para evitar los errores que te salieron
                 publishHTML([
+                    allowMissing: false,
+                    alwaysLinkToLastBuild: true,
+                    keepAll: true,
                     reportDir: 'reports',
                     reportFiles: 'report.html',
-                    reportName: 'Reporte HTML de Newman',
-                    keepAll: true
+                    reportName: 'Reporte HTML de Newman'
                 ])
                 
-                // Muestra gráficas de fallos/éxitos
                 junit 'reports/junit.xml'
             }
         }
@@ -66,7 +69,7 @@ pipeline {
     
     post {
         always {
-            echo "🏁 Proceso finalizado. Limpiando espacio de trabajo..."
+            echo "🏁 Proceso finalizado."
             cleanWs()
         }
     }
