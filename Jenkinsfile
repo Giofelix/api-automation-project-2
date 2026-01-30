@@ -2,7 +2,6 @@ pipeline {
     agent any
     
     tools {
-        // Asegúrate que este nombre sea igual al que pusiste en Manage Jenkins > Tools
         nodejs 'node20' 
     }
     
@@ -25,8 +24,7 @@ pipeline {
         
         stage('Instalación') {
             steps {
-                echo "⚙️ Instalando dependencias del proyecto..."
-                // Usamos BAT por estar en Windows
+                echo "⚙️ Instalando dependencias..."
                 bat 'npm ci'
             }
         }
@@ -39,19 +37,19 @@ pipeline {
                     def command = "npx newman run ${COLLECTION} -g ${GLOBAL_ENV} -r cli"
                     
                     if (params.FULL_REPORT) {
-                        // Creamos la carpeta de reportes si no existe
                         bat 'if not exist reports mkdir reports'
                         command += ",htmlextra,junit --reporter-htmlextra-export reports/report.html --reporter-junit-export reports/junit.xml"
                     }
                     
-                    // Ejecutamos el comando con BAT
                     bat command
                 }
             }
         }
         
-       stage('Publicación de Resultados') {
-            // "post" dentro del stage asegura que esto corra siempre
+        stage('Publicación de Resultados') {
+            steps {
+                echo "📊 Procesando reportes de prueba..."
+            }
             post {
                 always {
                     publishHTML([
