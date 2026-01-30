@@ -50,19 +50,21 @@ pipeline {
             }
         }
         
-        stage('Publicación de Resultados') {
-            steps {
-                // Configuración completa para evitar los errores que te salieron
-                publishHTML([
-                    allowMissing: false,
-                    alwaysLinkToLastBuild: true,
-                    keepAll: true,
-                    reportDir: 'reports',
-                    reportFiles: 'report.html',
-                    reportName: 'Reporte HTML de Newman'
-                ])
-                
-                junit 'reports/junit.xml'
+       stage('Publicación de Resultados') {
+            // "post" dentro del stage asegura que esto corra siempre
+            post {
+                always {
+                    publishHTML([
+                        allowMissing: false,
+                        alwaysLinkToLastBuild: true,
+                        keepAll: true,
+                        reportDir: 'reports',
+                        reportFiles: 'report.html',
+                        reportName: 'Reporte HTML de Newman'
+                    ])
+                    
+                    junit 'reports/junit.xml'
+                }
             }
         }
     }
