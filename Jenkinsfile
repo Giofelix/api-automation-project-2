@@ -1,14 +1,14 @@
 pipeline {
     agent any
 
-    // PUNTO 2 y 4: Disparadores automáticos
+    // PUNTOS 2 y 4: Automatización por cambios (cada 5 min) y por horario (8 AM)
     triggers {
-        pollSCM('H/5 * * * *') // Revisa GitHub cada 5 min. Si hay cambios, ejecuta.
-        cron('H 08 * * *')     // Se ejecuta todos los días a las 8:00 AM automáticamente.
+        pollSCM('H/5 * * * *') 
+        cron('H 08 * * *')
     }
 
     tools {
-        nodejs 'node20' // Debe coincidir con tu nombre en 'Global Tool Configuration'
+        nodejs 'node20' 
     }
 
     environment {
@@ -17,38 +17,42 @@ pipeline {
     }
 
     stages {
-        stage('🚀 Inicializando') {
+        stage('🚀 Preparación') {
             steps {
-                echo "--- Iniciando Proceso de Automatización ---"
-                deleteDir() // Limpia la carpeta para que no haya archivos viejos
+                // Punto 3: Consola limpia usando echo informativos
+                echo "===================================================="
+                echo "1. LIMPIANDO ESPACIO DE TRABAJO Y DESCARGANDO CÓDIGO"
+                echo "===================================================="
+                deleteDir() 
                 checkout scm
             }
         }
 
-        stage('📦 Instalando Herramientas') {
+        stage('📦 Instalación') {
             steps {
-                echo "Instalando dependencias necesarias..."
-                bat 'npm ci'
+                echo "2. INSTALANDO DEPENDENCIAS (NPM CI)..."
+                // @ al inicio del comando oculta el comando "sucio" en la consola de Jenkins
+                bat '@npm ci'
             }
         }
 
-        stage('🧪 Ejecutando Pruebas API') {
+        stage('🧪 Ejecución de Tests') {
             steps {
                 script {
-                    echo "Ejecutando Newman... Por favor espera."
-                    // Creamos la carpeta de reportes
-                    bat 'if not exist reports mkdir reports'
+                    echo "3. EJECUTANDO PRUEBAS EN LA API..."
+                    bat '@if not exist reports mkdir reports'
                     
-                    // Ejecución silenciosa para que la consola no sea un desorden
-                    // Usamos --suppress-exit-code para que el reporte se genere SIEMPRE
-                    bat "npx newman run ${COLLECTION} -g ${GLOBAL_ENV} -r cli,htmlextra --reporter-htmlextra-export reports/reporte_final.html --suppress-exit-code"
+                    // --suppress-exit-code asegura que el pipeline no se rompa antes de publicar el reporte
+                    // --reporter-cli-no-summary ayuda a que la consola sea menos ruidosa
+                    bat "npx newman run ${COLLECTION} -g ${GLOBAL_ENV} -r cli,htmlextra --reporter-cli-no-summary --reporter-htmlextra-export reports/reporte_final.html --suppress-exit-code"
                 }
             }
         }
 
-        stage('📊 Generando Reporte') {
+        stage('📊 Reporte Final') {
             steps {
-                echo "Publicando resultados en la interfaz de Jenkins..."
+                echo "4. GENERANDO INTERFAZ GRÁFICA DEL REPORTE..."
+                // Punto 1: Publicación del reporte HTML
                 publishHTML([
                     allowMissing: false,
                     alwaysLinkToLastBuild: true,
@@ -63,7 +67,10 @@ pipeline {
 
     post {
         always {
-            echo "--- Finalizado: Puedes ver el reporte en el menú de la izquierda ---"
+            echo "===================================================="
+            echo "PROCESO FINALIZADO EXITOSAMENTE"
+            echo "Revisa el menú lateral izquierdo: 'Reporte Newman HTML'"
+            echo "===================================================="
         }
     }
 }
